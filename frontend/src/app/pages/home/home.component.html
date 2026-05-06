@@ -1,0 +1,143 @@
+<div class="home-page">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg">
+      <div class="grid-pattern"></div>
+      <div class="hero-glow"></div>
+    </div>
+    <div class="hero-content container">
+      <div class="hero-badge">
+        <span class="dot dot-green"></span>
+        <span>1,247 developers coding live right now</span>
+      </div>
+      <h1 class="hero-title">
+        Code Together.<br>
+        <span class="gradient-text">Build Faster.</span><br>
+        Ship Smarter.
+      </h1>
+      <p class="hero-subtitle">
+        The real-time collaborative code platform. Multi-cursor editing,
+        sandboxed execution, version snapshots — all in your browser.
+      </p>
+      <div class="hero-cta">
+        @if (auth.isLoggedIn) {
+          <a routerLink="/dashboard" class="btn btn-primary btn-lg">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Go to Dashboard
+          </a>
+          <a routerLink="/editor" class="btn btn-ghost btn-lg">
+            Open Live Editor →
+          </a>
+        } @else {
+          <a routerLink="/register" class="btn btn-primary btn-lg">
+            Start Coding Free
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+          <a routerLink="/explore" class="btn btn-ghost btn-lg">
+            Explore Projects
+          </a>
+        }
+      </div>
+
+      <!-- Code preview mockup -->
+      <div class="code-preview">
+        <div class="preview-bar">
+          <div class="preview-dots">
+            <span class="pdot red"></span>
+            <span class="pdot yellow"></span>
+            <span class="pdot green"></span>
+          </div>
+          <span class="preview-title">main.py — neural-search-engine</span>
+          <div class="preview-users">
+            <div class="avatar avatar-sm" style="border-color: #00d4ff; font-size:9px;">AK</div>
+            <div class="avatar avatar-sm" style="border-color: #00ffa3; margin-left:-8px; font-size:9px;">SK</div>
+            <div class="avatar avatar-sm" style="border-color: #ff6b9d; margin-left:-8px; font-size:9px;">DM</div>
+          </div>
+        </div>
+        <div class="preview-code">
+          <div class="code-line"><span class="ln">1</span><span class="kw">import</span> <span class="id">numpy</span> <span class="kw">as</span> <span class="id">np</span></div>
+          <div class="code-line"><span class="ln">2</span><span class="kw">from</span> <span class="id">sentence_transformers</span> <span class="kw">import</span> <span class="cl">SentenceTransformer</span></div>
+          <div class="code-line"><span class="ln">3</span></div>
+          <div class="code-line cursor-line"><span class="ln">4</span><span class="kw">class</span> <span class="cl">NeuralSearchEngine</span><span class="pu">:</span><div class="live-cursor" style="background:#00d4ff;"></div></div>
+          <div class="code-line"><span class="ln">5</span>    <span class="kw">def</span> <span class="fn">__init__</span><span class="pu">(</span><span class="kw">self</span><span class="pu">,</span> <span class="id">model</span><span class="pu">:</span> <span class="cl">str</span><span class="pu">):</span></div>
+          <div class="code-line"><span class="ln">6</span>        <span class="kw">self</span><span class="pu">.</span><span class="id">model</span> <span class="op">=</span> <span class="cl">SentenceTransformer</span><span class="pu">(</span><span class="id">model</span><span class="pu">)</span></div>
+          <div class="code-line cursor-line2"><span class="ln">7</span>        <span class="kw">self</span><span class="pu">.</span><span class="id">collection</span> <span class="op">=</span> <span class="cl">None</span><div class="live-cursor" style="background:#00ffa3;"></div></div>
+          <div class="code-line"><span class="ln">8</span></div>
+          <div class="code-line"><span class="ln">9</span>    <span class="kw">def</span> <span class="fn">search</span><span class="pu">(</span><span class="kw">self</span><span class="pu">,</span> <span class="id">query</span><span class="pu">:</span> <span class="cl">str</span><span class="pu">)</span> <span class="op">-></span> <span class="cl">list</span><span class="pu">:</span></div>
+          <div class="code-line"><span class="ln">10</span>       <span class="id">embedding</span> <span class="op">=</span> <span class="kw">self</span><span class="pu">.</span><span class="id">model</span><span class="pu">.</span><span class="fn">encode</span><span class="pu">([</span><span class="id">query</span><span class="pu">])</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats-section container">
+    @for (stat of stats; track stat.label) {
+      <div class="stat-card">
+        <div class="stat-icon">{{ stat.icon }}</div>
+        <div class="stat-value" [style.color]="stat.color">{{ stat.value }}</div>
+        <div class="stat-label">{{ stat.label }}</div>
+      </div>
+    }
+  </section>
+
+  <!-- Features -->
+  <section class="features-section container">
+    <div class="section-header">
+      <span class="section-label">Platform Features</span>
+      <h2>Everything you need to collaborate</h2>
+      <p class="text-secondary">Built for modern development teams. CodeSync is a microservices platform with independent, scalable services.</p>
+    </div>
+    <div class="features-grid">
+      @for (feature of features; track feature.title) {
+        <div class="feature-card">
+          <div class="feature-icon">{{ feature.icon }}</div>
+          <h3>{{ feature.title }}</h3>
+          <p>{{ feature.desc }}</p>
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Trending projects -->
+  <section class="trending-section container">
+    <div class="section-header">
+      <div>
+        <span class="section-label">Explore</span>
+        <h2>Trending Projects</h2>
+      </div>
+      <a routerLink="/explore" class="btn btn-ghost btn-sm">View all →</a>
+    </div>
+    <div class="projects-row">
+      @for (project of topProjects(); track project.projectId) {
+        <a [routerLink]="['/project', project.projectId]" class="project-card">
+          <div class="flex justify-between items-center gap-3" style="margin-bottom:10px;">
+            <h3 class="mono" style="font-size:14px;">{{ project.name }}</h3>
+            <span class="badge badge-accent tag {{ getLangClass(project.language) }}">{{ project.language }}</span>
+          </div>
+          <p class="text-secondary" style="font-size:12px; line-height:1.5; margin-bottom:14px;">{{ project.description }}</p>
+          <div class="project-meta">
+            <span>⭐ {{ project.starCount }}</span>
+            <span>🍴 {{ project.forkCount }}</span>
+            <span class="text-muted mono" style="font-size:11px;">{{ '&#64;' + project.ownerUsername }}</span>
+          </div>
+        </a>
+      }
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section container">
+    <div class="cta-card">
+      <div class="cta-glow"></div>
+      <h2>Ready to code together?</h2>
+      <p class="text-secondary">Join 14,000+ developers already collaborating on CodeSync.</p>
+      <div class="flex gap-3" style="margin-top:24px; justify-content:center;">
+        <a routerLink="/register" class="btn btn-primary btn-lg">Get Started Free</a>
+        <a routerLink="/explore" class="btn btn-ghost btn-lg">Browse Projects</a>
+      </div>
+    </div>
+  </section>
+
+</div>

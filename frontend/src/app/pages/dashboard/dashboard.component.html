@@ -1,0 +1,164 @@
+<div class="page-content dashboard-page">
+  <div class="container" style="padding-top:32px; padding-bottom:60px;">
+    <div class="dash-header">
+      <div>
+        <h1 style="font-size:26px; margin-bottom:4px;">
+          Good day, <span class="text-accent">{{ user?.fullName || user?.username }}</span> 👋
+        </h1>
+        <p class="text-secondary" style="font-size:13px;">
+          <span class="mono text-muted">&#64;{{ user?.username }}</span> · {{ myProjects().length }} projects
+        </p>
+      </div>
+      <button class="btn btn-primary" (click)="showNewProjectModal.set(true)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Project
+      </button>
+    </div>
+
+    <div class="dash-stats">
+      <div class="dstat">
+        <span class="dstat-icon" style="background:var(--accent-dim); color:var(--accent);">📁</span>
+        <div><div class="dstat-val">{{ myProjects().length }}</div><div class="dstat-label">Projects</div></div>
+      </div>
+      <div class="dstat">
+        <span class="dstat-icon" style="background:var(--green-dim); color:var(--green);">⚡</span>
+        <div><div class="dstat-val">0</div><div class="dstat-label">Active Sessions</div></div>
+      </div>
+      <div class="dstat">
+        <span class="dstat-icon" style="background:var(--orange-dim); color:var(--orange);">▶️</span>
+        <div><div class="dstat-val">0</div><div class="dstat-label">Code Runs</div></div>
+      </div>
+      <div class="dstat">
+        <span class="dstat-icon" style="background:var(--purple-dim); color:#a78bfa;">⭐</span>
+        <div><div class="dstat-val">0</div><div class="dstat-label">Total Stars</div></div>
+      </div>
+    </div>
+
+    <div class="dash-layout">
+      <div class="dash-main">
+        <div class="panel-header">
+          <div class="tab-group">
+            <button class="tab" [class.active]="activeTab()==='projects'" (click)="switchTab('projects')">My Projects</button>
+            <button class="tab" [class.active]="activeTab()==='starred'" (click)="switchTab('starred')">Starred</button>
+          </div>
+          <div style="position:relative;">
+            <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input class="input" style="padding-left:32px;width:200px;height:34px;font-size:13px;" placeholder="Filter..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)">
+          </div>
+        </div>
+
+        <div class="project-list">
+          @if (loading()) {
+            <div class="flex items-center gap-2" style="padding:24px;color:var(--text-muted);font-size:13px;">
+              <span class="spinner"></span> Loading projects...
+            </div>
+          }
+          @if (!loading() && filteredProjects.length === 0) {
+            <div class="empty-state">
+              <div class="empty-icon">📁</div>
+              <p>No projects yet. Create your first one!</p>
+              <button class="btn btn-primary btn-sm" (click)="showNewProjectModal.set(true)">Create Project</button>
+            </div>
+          }
+          @for (project of filteredProjects; track project.projectId) {
+            <a [routerLink]="['/project', project.projectId]" class="project-row">
+              <div class="project-row-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div class="project-row-info">
+                <div class="flex items-center gap-2">
+                  <span class="mono" style="font-size:14px;font-weight:600;">{{ project.name }}</span>
+                  @if (project.visibility === 'PRIVATE') {
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  }
+                  <span class="badge {{ getLangClass(project.language) }}" style="font-size:10px;padding:1px 6px;">{{ project.language }}</span>
+                </div>
+                <div class="text-secondary" style="font-size:12px;margin-top:2px;">{{ project.description }}</div>
+              </div>
+              <div class="project-row-meta">
+                <span class="mono" style="font-size:11px;color:var(--text-muted);">⭐ {{ project.starCount }}</span>
+                <span class="mono" style="font-size:11px;color:var(--text-muted);">{{ formatDate(project.updatedAt) }}</span>
+                <button class="btn btn-icon" title="Star project"
+                  [style.color]="isStarred(project.projectId) ? '#ffd60a' : 'var(--text-muted)'"
+                  (click)="toggleStar(project.projectId, $event)" style="padding:2px 4px;font-size:13px;">
+                  {{ isStarred(project.projectId) ? '⭐' : '☆' }}
+                </button>
+                @if (activeTab() === 'projects') {
+                  <button class="btn btn-icon" title="Fork project" (click)="forkProject(project.projectId, $event)"
+                    style="padding:2px 4px;font-size:12px;color:var(--text-muted);">🍴</button>
+                  <button class="btn btn-icon" title="Delete project" (click)="deleteProject(project.projectId, project.name, $event)"
+                    style="padding:2px 4px;font-size:12px;color:var(--red,#ff4d4d);">🗑</button>
+                }
+              </div>
+            </a>
+          }
+        </div>
+      </div>
+
+      <div class="dash-sidebar">
+        <div class="sidebar-section">
+          <div class="section-label" style="margin-bottom:12px;">Quick Actions</div>
+          <div class="quick-actions">
+            <a routerLink="/editor" [queryParams]="{projectId: myProjects()[0]?.projectId}" class="quick-action quick-action-glow">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              <div><div style="font-weight:600;font-size:13px;">Open Editor</div><div style="font-size:11px;color:var(--text-muted);">Start coding</div></div>
+            </a>
+            <button class="quick-action" (click)="showNewProjectModal.set(true)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <div><div style="font-weight:600;font-size:13px;">New Project</div><div style="font-size:11px;color:var(--text-muted);">Create workspace</div></div>
+            </button>
+            <a routerLink="/explore" class="quick-action">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <div><div style="font-weight:600;font-size:13px;">Explore</div><div style="font-size:11px;color:var(--text-muted);">Public projects</div></div>
+            </a>
+          </div>
+        </div>
+        <div class="sidebar-section">
+          <div class="section-label" style="margin-bottom:12px;">Tips</div>
+          <div class="activity-list">
+            @for (item of recentActivity; track item.text) {
+              <div class="activity-item">
+                <span class="activity-icon" [style.background]="item.color + '22'" [style.color]="item.color">{{ item.icon }}</span>
+                <div style="font-size:12px;line-height:1.4;">{{ item.text }}</div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (showNewProjectModal()) {
+    <div class="modal-backdrop" (click)="showNewProjectModal.set(false)">
+      <div class="modal fade-in" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Create New Project</h3>
+          <button class="btn btn-icon" (click)="showNewProjectModal.set(false)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group"><label>Project Name</label><input class="input" type="text" placeholder="my-awesome-project" [(ngModel)]="newProject.name"></div>
+          <div class="form-group"><label>Description</label><input class="input" type="text" placeholder="Short description" [(ngModel)]="newProject.description"></div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Language</label>
+              <select class="input" [(ngModel)]="newProject.language">
+                @for (lang of languages; track lang.id) { <option [value]="lang.id">{{ lang.name }}</option> }
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Visibility</label>
+              <select class="input" [(ngModel)]="newProject.visibility">
+                <option value="PRIVATE">🔒 Private</option>
+                <option value="PUBLIC">🌐 Public</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" (click)="showNewProjectModal.set(false)">Cancel</button>
+          <button class="btn btn-primary" (click)="createProject()">Create Project</button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

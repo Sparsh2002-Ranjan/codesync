@@ -1,0 +1,73 @@
+<div class="page-content">
+  <div class="container" style="padding-top:32px; padding-bottom:60px;">
+
+    <div class="explore-header">
+      <div>
+        <h1 style="font-size:28px; margin-bottom:6px;">Explore Projects</h1>
+        <p class="text-secondary">Discover open-source projects from the CodeSync community</p>
+      </div>
+    </div>
+
+    <!-- Search + filters -->
+    <div class="explore-filters">
+      <div style="position:relative; flex:1; max-width:500px;">
+        <svg style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-muted);" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="input" style="padding-left:38px;" placeholder="Search projects, developers, languages..."
+          [ngModel]="query()" (ngModelChange)="query.set($event)">
+      </div>
+      <div class="filter-group">
+        <span class="section-label" style="white-space:nowrap;">Sort by:</span>
+        <button class="tag" [class.active]="sort()==='stars'" (click)="sort.set('stars')">⭐ Stars</button>
+        <button class="tag" [class.active]="sort()==='forks'" (click)="sort.set('forks')">🍴 Forks</button>
+        <button class="tag" [class.active]="sort()==='updated'" (click)="sort.set('updated')">🕐 Recent</button>
+      </div>
+    </div>
+
+    <!-- Language filter chips -->
+    <div class="lang-chips">
+      <button class="tag" [class.active]="!selectedLang()" (click)="selectedLang.set('')">All Languages</button>
+      @for (lang of languages; track lang.id) {
+        <button class="tag {{ getLangClass(lang.id) }}" [class.active]="selectedLang()===lang.id" (click)="selectedLang.set(selectedLang()===lang.id ? '' : lang.id)">
+          {{ lang.name }}
+        </button>
+      }
+    </div>
+
+    <!-- Results count -->
+    <div class="results-meta">
+      <span class="text-muted" style="font-size:13px;">{{ projects.length }} projects found</span>
+    </div>
+
+    <!-- Project grid -->
+    <div class="projects-grid">
+      @for (project of projects; track project.projectId) {
+        <div class="proj-card">
+          <div class="proj-card-top">
+            <div class="flex items-center gap-2" style="min-width:0;">
+              <div class="proj-avatar">{{ project.name[0].toUpperCase() }}</div>
+              <div style="min-width:0;">
+                <a [routerLink]="['/project', project.projectId]" class="proj-name">{{ project.name }}</a>
+                <div class="mono text-muted" style="font-size:11px;">{{ '&#64;' + project.ownerUsername }}</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1">
+              <button class="star-btn" [class.starred]="isStarred(project.projectId)" (click)="toggleStar(project.projectId)"
+                title="{{ isStarred(project.projectId) ? 'Unstar' : 'Star' }} project">
+                {{ isStarred(project.projectId) ? '⭐' : '☆' }}
+              </button>
+              <button class="star-btn" (click)="forkProject(project)" title="Fork project"
+                style="font-size:15px; opacity:0.75; padding:4px 7px;">🍴</button>
+            </div>
+          </div>
+          <p class="proj-desc">{{ project.description }}</p>
+          <div class="proj-footer">
+            <span class="badge badge {{ getLangClass(project.language) }}" style="font-size:10px;">{{ project.language }}</span>
+            <span class="text-muted" style="font-size:11px; font-family:var(--font-mono);">⭐ {{ project.starCount }}</span>
+            <span class="text-muted" style="font-size:11px; font-family:var(--font-mono);">🍴 {{ project.forkCount }}</span>
+            <span class="text-muted" style="font-size:10px; margin-left:auto;">{{ formatDate(project.updatedAt) }}</span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

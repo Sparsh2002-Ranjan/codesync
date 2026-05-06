@@ -1,0 +1,718 @@
+<div class="editor-layout">
+
+  <!-- ═══ TOP BAR ═══ -->
+  <div class="editor-topbar">
+    <div class="topbar-left">
+      <a routerLink="/dashboard" class="btn btn-icon" title="Dashboard">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+      </a>
+      <div class="project-breadcrumb">
+        <span class="text-muted mono">&#64;{{ auth.currentUser()?.username }}</span>
+        <span class="text-muted"> / </span>
+        <span class="mono" style="font-weight:600;">{{ project?.name }}</span>
+        @if (activeFile()) {
+          <span class="text-muted"> / </span>
+          <span class="mono text-accent">{{ activeFile()?.name }}</span>
+          @if (unsavedChanges()) {
+            <span class="unsaved-dot" title="Unsaved changes"></span>
+          }
+        }
+      </div>
+      <span class="badge badge-green" style="font-size:10px;padding:2px 8px;">main</span>
+    </div>
+
+    <div class="topbar-center">
+      @if (isInSession()) {
+        <div class="session-indicator">
+          <span class="dot dot-green live-dot"></span>
+          <span class="text-green fw600" style="font-size:12px;">Live — {{ participants.length }} online</span>
+          <div class="participant-avatars">
+            @for (p of participants; track p.participantId) {
+              <div class="avatar avatar-sm" [style.border-color]="p.color" [style.color]="p.color" [title]="p.username + ' (' + p.role + ')'">
+                {{ getInitials(p.username) }}
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="topbar-right">
+      <!-- ▶ Run Code -->
+      @if (activeFile()) {
+        <button class="run-btn" (click)="runCode()"
+          [disabled]="ex.isRunning()"
+          title="Run code (Ctrl+Enter)">
+          @if (ex.isRunning()) {
+            <span class="spinner" style="width:12px;height:12px;border-width:2px;border-color:#fff3;border-top-color:#fff;"></span>
+            Running...
+          } @else {
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Run
+          }
+        </button>
+      }
+
+      <!-- 💾 Save -->
+      <button class="save-btn" (click)="saveFile()" [disabled]="saving() || !unsavedChanges()" title="Save file (Ctrl+S)">
+        @if (saving()) {
+          <span class="spinner" style="width:12px;height:12px;border-width:2px;"></span>
+          Saving...
+        } @else if (saved()) {
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span style="color:var(--green);">Saved!</span>
+        } @else {
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save
+        }
+      </button>
+
+      <!-- 📸 Snapshot -->
+      <button class="btn btn-ghost btn-sm" (click)="showSnapshotModal.set(true)" title="Create version snapshot">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Snapshot
+      </button>
+
+      <!-- 🗑 Delete Project — only visible to owner -->
+      @if (project && project.ownerId === auth.currentUser()?.userId) {
+        <button class="btn btn-ghost btn-sm" (click)="deleteProject()" title="Delete this project"
+          style="color:#ff4d4d; border-color:rgba(255,77,77,.25);">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+          Delete Project
+        </button>
+      }
+
+      <!-- 👥 Collaborators -->
+      <button class="btn btn-ghost btn-sm" (click)="showCollabModal.set(true)" title="Invite collaborators">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Collaborators
+        @if (participants.length > 1) {
+          <span class="badge badge-green" style="font-size:9px;padding:1px 5px;">{{ participants.length }}</span>
+        }
+      </button>
+
+      <!-- ⚡ Session button — only shown to the project owner (host) -->
+      @if (isHost) {
+        @if (!isInSession()) {
+          <button class="btn btn-primary btn-sm" (click)="startSession()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            Start Session
+          </button>
+        } @else {
+          <button class="btn btn-danger btn-sm" (click)="leaveSession()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            End Session
+          </button>
+        }
+      } @else if (isInSession() && isSessionMember) {
+        <button class="btn btn-danger btn-sm" (click)="leaveSession()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Leave Session
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ═══ INVITE BANNERS ═══ -->
+  @for (invite of pendingInvites; track invite.sessionId) {
+    <div class="invite-banner">
+      <span class="dot dot-green live-dot"></span>
+      <span class="invite-banner-text">
+        <strong>{{ invite.fromUser }}</strong> invited you to collaborate
+      </span>
+      <button class="btn btn-green btn-sm" (click)="acceptInvite(invite)">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Accept &amp; Join
+      </button>
+      <button class="btn btn-ghost btn-sm" (click)="dismissInvite(invite.sessionId)">✕</button>
+    </div>
+  }
+
+  @if (pendingJoinApproval()) {
+    <div class="invite-banner" style="background:rgba(167,139,250,0.08);border-bottom:1px solid rgba(167,139,250,0.2);">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="animation:spin 2s linear infinite;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      <span class="invite-banner-text">Waiting for the host to approve your join request…</span>
+    </div>
+  }
+
+  <!-- ═══ BODY ═══ -->
+  <div class="editor-body">
+
+    <!-- ══ LEFT SIDEBAR ══ -->
+    <div class="editor-sidebar">
+      <div class="sidebar-tabs">
+        <button class="stab" [class.active]="leftPanel()==='files'" (click)="leftPanel.set('files')" title="Files">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        </button>
+        <button class="stab" [class.active]="leftPanel()==='search'" (click)="leftPanel.set('search')" title="Search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </button>
+        <button class="stab" [class.active]="leftPanel()==='collab'" (click)="leftPanel.set('collab')" title="Live participants">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </button>
+      </div>
+
+      <!-- Files -->
+      <div class="sidebar-panel" [class.hidden]="leftPanel() !== 'files'">
+        <div class="panel-title-row">
+          <span class="panel-title">EXPLORER</span>
+          <div class="flex gap-1">
+            <button class="icon-btn" (click)="showNewFileModal.set(true)" title="New File">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            </button>
+            <button class="icon-btn" (click)="showNewFolderModal.set(true)" title="New Folder">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+            </button>
+          </div>
+        </div>
+        @if (loadingFiles()) {
+          <div class="flex items-center gap-2" style="padding:16px;color:var(--text-muted);font-size:12px;"><span class="spinner"></span> Loading...</div>
+        }
+        <div class="file-tree">
+          @for (file of getTreeFiles(); track file.fileId) {
+            @if (file.isFolder) {
+              <div class="tree-folder" (click)="toggleFolder(file.name)">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="chevron" [class.open]="expandedFolders().has(file.name)"><polyline points="9 18 15 12 9 6"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="#ffd60a" style="opacity:.8"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                <span>{{ file.name }}</span>
+              </div>
+              @if (expandedFolders().has(file.name) && file.children) {
+                @for (child of file.children; track child.fileId) {
+                  <div class="tree-file indented" [class.active]="activeFile()?.fileId === child.fileId" (click)="selectFile(child)" style="display:flex;align-items:center;justify-content:space-between;">
+                    <div style="display:flex;align-items:center;gap:4px;min-width:0;">
+                      <span>{{ getFileIcon(child.name) }}</span>
+                      <span class="truncate">{{ child.name }}</span>
+                    </div>
+                    <div class="file-actions" style="display:flex;gap:2px;opacity:0;transition:opacity .15s;" (mouseenter)="$event.stopPropagation()">
+                      <button class="btn btn-icon" style="padding:1px 3px;font-size:10px;" title="Rename" (click)="openRename(child, $event)">✏️</button>
+                      <button class="btn btn-icon" style="padding:1px 3px;font-size:10px;color:#ff4d4d;" title="Delete" (click)="openDeleteFile(child, $event)">🗑</button>
+                    </div>
+                  </div>
+                }
+              }
+            } @else {
+              <div class="tree-file" [class.active]="activeFile()?.fileId === file.fileId" (click)="selectFile(file)" style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:4px;min-width:0;">
+                  <span>{{ getFileIcon(file.name) }}</span>
+                  <span class="truncate">{{ file.name }}</span>
+                </div>
+                <div class="file-actions" style="display:flex;gap:2px;opacity:0;transition:opacity .15s;" (mouseenter)="$event.stopPropagation()">
+                  <button class="btn btn-icon" style="padding:1px 3px;font-size:10px;" title="Rename" (click)="openRename(file, $event)">✏️</button>
+                  <button class="btn btn-icon" style="padding:1px 3px;font-size:10px;color:#ff4d4d;" title="Delete" (click)="openDeleteFile(file, $event)">🗑</button>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="sidebar-panel" [class.hidden]="leftPanel() !== 'search'">
+        <div class="panel-title-row"><span class="panel-title">SEARCH</span></div>
+        <div style="padding:8px 10px;">
+          <input class="input" style="font-size:12px;height:30px;margin-bottom:10px;"
+            placeholder="Search in project..." [(ngModel)]="searchQuery" (input)="doSearch()">
+          @for (r of searchResults; track r.line) {
+            <div class="search-result-row">
+              <span class="mono text-muted" style="font-size:10px;min-width:24px;">{{ r.line }}</span>
+              <span class="mono truncate" style="font-size:11px;">{{ r.text }}</span>
+            </div>
+          }
+          @if (searchResults.length === 0 && searchQuery) {
+            <p class="text-muted" style="font-size:12px;text-align:center;padding:16px 0;">No results</p>
+          }
+        </div>
+      </div>
+
+      <!-- Live participants -->
+      <div class="sidebar-panel" [class.hidden]="leftPanel() !== 'collab'">
+        <div class="panel-title-row">
+          <span class="panel-title">PARTICIPANTS</span>
+          @if (isInSession()) { <span class="dot dot-green live-dot"></span> }
+        </div>
+        @if (!isInSession()) {
+          <div style="padding:16px;text-align:center;">
+            <p class="text-muted" style="font-size:12px;margin-bottom:12px;">No active session</p>
+            @if (isHost) {
+              <button class="btn btn-primary btn-sm w-full" style="justify-content:center;" (click)="startSession()">Start Live Session</button>
+            } @else {
+              <p class="text-muted" style="font-size:11px;">The host hasn't started a session yet.</p>
+            }
+          </div>
+        } @else {
+          @for (p of participants; track p.participantId) {
+            <div class="participant-row">
+              <div class="avatar avatar-sm" [style.border-color]="p.color" [style.color]="p.color">{{ getInitials(p.username) }}</div>
+              <div style="flex:1;min-width:0;">
+                <div class="fw600" style="font-size:12px;">{{ p.username }}</div>
+                <div class="mono text-muted" style="font-size:10px;">L{{ p.cursorLine }}:{{ p.cursorCol }}</div>
+              </div>
+              <span class="badge {{ p.role === 'HOST' ? 'badge-accent' : 'badge-green' }}" style="font-size:9px;">{{ p.role }}</span>
+            </div>
+          }
+          <!-- Session link in sidebar -->
+          <div class="session-link-box">
+            <span class="section-label" style="display:block;margin-bottom:6px;">Share Link</span>
+            <div class="session-link-row">
+              <span class="mono truncate text-muted" style="font-size:10px;">{{ sessionLink() }}</span>
+              <button class="icon-btn" (click)="copySessionLink()" title="Copy invite link">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+            </div>
+            @if (linkCopied()) {
+              <p class="text-green" style="font-size:10px;margin-top:4px;">✓ Link copied to clipboard!</p>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- ══ CODE EDITOR ══ -->
+    <div class="editor-center">
+      @if (activeFile()) {
+        <div class="file-tabs-bar">
+          <div class="file-tab active">
+            <span>{{ getFileIcon(activeFile()!.name) }}</span>
+            <span class="mono" style="font-size:12px;">{{ activeFile()!.name }}</span>
+            @if (unsavedChanges()) {
+              <span class="unsaved-dot" title="Unsaved changes"></span>
+            }
+            <span class="badge {{ getLangClass(activeFile()!.language) }}" style="font-size:9px;padding:1px 6px;">{{ activeFile()!.language }}</span>
+          </div>
+          <div style="margin-left:auto;display:flex;align-items:center;padding-right:12px;gap:10px;">
+            @if (isInSession()) {
+              <span class="badge badge-green" style="font-size:10px;">
+                <span class="dot dot-green" style="width:5px;height:5px;"></span>
+                {{ participants.length }} live
+              </span>
+            }
+            <span class="text-muted mono" style="font-size:10px;">{{ getCodeLines().length }} lines</span>
+          </div>
+        </div>
+      }
+
+      <div class="code-area">
+        @if (!activeFile() && !loadingFiles()) {
+          <div class="editor-placeholder">
+            <div style="font-size:40px;margin-bottom:12px;">📄</div>
+            <p style="font-size:15px;font-weight:600;margin-bottom:6px;">No file selected</p>
+            <p class="text-muted" style="font-size:13px;">Select a file from the explorer or create a new one</p>
+            <button class="btn btn-primary" style="margin-top:16px;" (click)="showNewFileModal.set(true)">+ Create File</button>
+          </div>
+        }
+        @if (loadingFiles()) {
+          <div class="editor-placeholder">
+            <span class="spinner" style="width:32px;height:32px;border-width:3px;"></span>
+            <p class="text-muted" style="margin-top:12px;font-size:13px;">Loading files...</p>
+          </div>
+        }
+        @if (activeFile() && !loadingFiles()) {
+          <!-- Cursor overlays for other participants -->
+          @if (isInSession()) {
+            @for (p of participants.slice(1); track p.participantId) {
+              <div class="cursor-overlay" [style.top.px]="p.cursorLine * 22 + 8"
+                [style.border-color]="p.color" [style.color]="p.color">
+                <span class="cursor-caret" [style.background]="p.color"></span>{{ p.username }}
+              </div>
+            }
+          }
+          <div class="code-editor-wrapper">
+            <div class="line-numbers">
+              @for (line of getCodeLines(); track $index) {
+                <div class="line-num" [class.has-comment]="hasCommentOnLine($index + 1)">{{ $index + 1 }}</div>
+              }
+            </div>
+            <!-- #codeArea is the ViewChild ref used for direct DOM updates on remote edits -->
+            <textarea #codeArea class="code-textarea"
+              spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
+              [ngModel]="fileContent()" (ngModelChange)="onContentChange($event)"
+              [readonly]="isInSession() && !isSessionMember"
+              [title]="isInSession() && !isSessionMember ? 'Read-only: waiting for host approval' : ''"
+              wrap="off" placeholder="// Start coding..."></textarea>
+          </div>
+        }
+      </div>
+
+      <!-- ══ EXECUTION OUTPUT PANEL ══ -->
+      @if (showOutput()) {
+        <app-execution-panel
+          #execPanel
+          [language]="project?.language || activeFile()?.language || 'python'"
+          [code]="fileContent()"
+          [projectId]="project?.projectId"
+          [fileId]="activeFile()?.fileId">
+        </app-execution-panel>
+      }
+    </div>
+
+    <!-- ══ RIGHT PANEL ══ -->
+    <div class="editor-right">
+      <div class="rpanel-tabs">
+        <button class="rtab" [class.active]="rightPanel()==='history'" (click)="rightPanel.set('history')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          History
+        </button>
+        <button class="rtab" [class.active]="rightPanel()==='comments'" (click)="rightPanel.set('comments')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Comments
+          @if (unresolvedComments > 0) {
+            <span class="badge badge-orange" style="font-size:9px;padding:1px 5px;">{{ unresolvedComments }}</span>
+          }
+        </button>
+      </div>
+
+      <!-- History panel -->
+      @if (rightPanel() === 'history') {
+        <div class="history-wrap">
+          <div class="history-header">
+            <span class="text-secondary" style="font-size:12px;">{{ snapshots().length }} snapshots · <span class="text-accent mono">main</span></span>
+            <button class="btn btn-primary btn-sm" (click)="showSnapshotModal.set(true)">+ New</button>
+          </div>
+          <div class="history-list">
+            @if (snapshots().length === 0) {
+              <div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">
+                No snapshots yet.
+                <button class="btn btn-ghost btn-sm" style="display:block;margin:10px auto 0;" (click)="showSnapshotModal.set(true)">Create first snapshot</button>
+              </div>
+            }
+            @for (snap of snapshots(); track snap.snapshotId) {
+              <div class="snapshot-card">
+                <div class="snap-dot-line"><div class="snap-dot"></div><div class="snap-line"></div></div>
+                <div class="snap-body">
+                  <div class="fw600" style="font-size:13px;margin-bottom:4px;">{{ snap.message }}</div>
+                  <div class="flex items-center gap-2" style="flex-wrap:wrap;">
+                    <div class="avatar" style="width:18px;height:18px;font-size:8px;border:1px solid var(--border);">{{ getInitials(snap.authorUsername) }}</div>
+                    <span class="text-muted" style="font-size:11px;">{{ snap.authorUsername }}</span>
+                    <span class="text-muted" style="font-size:11px;">{{ timeAgo(snap.createdAt) }}ago</span>
+                    <span class="mono text-muted" style="font-size:10px;margin-left:auto;">{{ snap.hash?.slice(0,8) }}</span>
+                  </div>
+                  <button class="btn btn-ghost btn-sm" style="font-size:11px;padding:3px 10px;margin-top:6px;" (click)="restoreSnapshot(snap)">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+                    Restore
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Comments panel -->
+      @if (rightPanel() === 'comments') {
+        <div class="comments-wrap">
+          <div class="comments-list">
+            @if (comments().length === 0) {
+              <div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">No comments yet</div>
+            }
+            @for (comment of comments(); track comment.commentId) {
+              <div class="comment-card" [class.resolved]="comment.resolved">
+                <div class="comment-head">
+                  <div class="avatar" style="width:24px;height:24px;font-size:9px;border:1px solid var(--border);flex-shrink:0;">{{ getInitials(comment.authorUsername) }}</div>
+                  <span class="fw600" style="font-size:12px;">{{ comment.authorUsername }}</span>
+                  <span class="mono text-muted" style="font-size:10px;">L{{ comment.lineNumber }}</span>
+                  <span class="text-muted" style="font-size:10px;margin-left:auto;">{{ timeAgo(comment.createdAt) }}ago</span>
+                  <button class="icon-btn" (click)="resolveComment(comment.commentId)" [title]="comment.resolved ? 'Unresolve' : 'Mark resolved'">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" [style.color]="comment.resolved ? 'var(--green)' : 'var(--text-muted)'"><polyline points="20 6 9 17 4 12"/></svg>
+                  </button>
+                </div>
+                <p class="comment-text">{{ comment.content }}</p>
+                @if (comment.resolved) {
+                  <span class="badge badge-green" style="font-size:9px;margin-top:4px;display:inline-block;">✓ Resolved</span>
+                }
+              </div>
+            }
+          </div>
+          <div class="comment-input-area">
+            <textarea class="input" style="font-size:12px;height:72px;resize:none;"
+              placeholder="Add a comment... @username to mention"
+              [(ngModel)]="newComment"></textarea>
+            <button class="btn btn-primary w-full" style="justify-content:center;margin-top:8px;" (click)="addComment()">Post Comment</button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ═══ MODALS ═══ -->
+
+  <!-- New File -->
+  @if (showNewFileModal()) {
+    <div class="modal-backdrop" (click)="showNewFileModal.set(false)">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header"><h3>New File</h3><button class="icon-btn" (click)="showNewFileModal.set(false)">✕</button></div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>File Name</label>
+            <input class="input" [(ngModel)]="newFileName" placeholder="e.g. utils.py, helper.ts" (keydown.enter)="createNewFile()" autofocus>
+          </div>
+          <p class="text-muted" style="font-size:12px;line-height:1.6;">
+            Extension sets language:<br>
+            .py → Python &nbsp; .java → Java &nbsp; .js → JS &nbsp; .ts → TypeScript<br>
+            .go → Go &nbsp; .rs → Rust &nbsp; .cpp → C++
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" (click)="showNewFileModal.set(false)">Cancel</button>
+          <button class="btn btn-primary" (click)="createNewFile()">Create File</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- New Folder -->
+  @if (showNewFolderModal()) {
+    <div class="modal-backdrop" (click)="showNewFolderModal.set(false)">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header"><h3>New Folder</h3><button class="icon-btn" (click)="showNewFolderModal.set(false)">✕</button></div>
+        <div class="modal-body">
+          <div class="form-group"><label>Folder Name</label><input class="input" [(ngModel)]="newFolderName" placeholder="e.g. src, utils, components" (keydown.enter)="createNewFolder()" autofocus></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" (click)="showNewFolderModal.set(false)">Cancel</button>
+          <button class="btn btn-primary" (click)="createNewFolder()">Create Folder</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Snapshot -->
+  @if (showSnapshotModal()) {
+    <div class="modal-backdrop" (click)="showSnapshotModal.set(false)">
+      <div class="modal" (click)="$event.stopPropagation()">
+        <div class="modal-header"><h3>Create Snapshot</h3><button class="icon-btn" (click)="showSnapshotModal.set(false)">✕</button></div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Commit Message</label>
+            <input class="input" [(ngModel)]="newSnapshotMsg" placeholder="feat: describe what changed" (keydown.enter)="createSnapshot()" autofocus>
+          </div>
+          <p class="text-muted" style="font-size:12px;">Branch: <span class="mono text-accent">main</span> · File: <span class="mono">{{ activeFile()?.name }}</span></p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" (click)="showSnapshotModal.set(false)">Cancel</button>
+          <button class="btn btn-primary" (click)="createSnapshot()">Save Snapshot</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ══ COLLABORATORS MODAL ══ -->
+  @if (showCollabModal()) {
+    <div class="modal-backdrop" (click)="showCollabModal.set(false)">
+      <div class="modal collab-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Collaborators
+          </h3>
+          <button class="icon-btn" (click)="showCollabModal.set(false)">✕</button>
+        </div>
+        <div class="modal-body">
+
+          <!-- Step 1: Session status -->
+          <div class="collab-step">
+            <div class="collab-step-label">
+              <span class="step-num {{ isInSession() ? 'done' : 'active' }}">{{ isInSession() ? '✓' : '1' }}</span>
+              <span class="fw600" style="font-size:13px;">Live Session</span>
+            </div>
+            @if (!isInSession()) {
+              <div style="padding:12px 0 0 28px;">
+                @if (isHost) {
+                  <p class="text-muted" style="font-size:12px;margin-bottom:10px;">A session lets multiple people edit the same file simultaneously in real time.</p>
+                  <button class="btn btn-primary" (click)="startSession(); showCollabModal.set(false)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                    Start Session Now
+                  </button>
+                } @else {
+                  <p class="text-muted" style="font-size:12px;">The project owner hasn't started a session yet. You'll be notified when one is available.</p>
+                }
+              </div>
+            } @else {
+              <div style="padding:8px 0 0 28px;">
+                <div class="flex items-center gap-2">
+                  <span class="dot dot-green live-dot"></span>
+                  <span class="text-green fw600" style="font-size:13px;">Session active — {{ participants.length }} participant(s)</span>
+                </div>
+                @if (!isSessionMember && !isHost) {
+                  <p class="text-muted" style="font-size:11px;margin-top:6px;">⏳ Waiting for the host to approve your join request…</p>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="collab-divider"></div>
+
+          <!-- Step 2: Share link -->
+          <div class="collab-step">
+            <div class="collab-step-label">
+              <span class="step-num {{ isInSession() ? 'active' : 'inactive' }}">2</span>
+              <span class="fw600" style="font-size:13px;">Share the Session Link</span>
+            </div>
+            <div style="padding:10px 0 0 28px;">
+              <p class="text-muted" style="font-size:12px;margin-bottom:10px;">
+                Anyone with this link can open it in their browser and join the session.
+              </p>
+              @if (isInSession()) {
+                <div class="share-link-box">
+                  <input class="input share-link-input" [value]="sessionLink()" readonly>
+                  <button class="btn {{ linkCopied() ? 'btn-green' : 'btn-primary' }}" (click)="copySessionLink()">
+                    @if (linkCopied()) {
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                      Copied!
+                    } @else {
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      Copy Link
+                    }
+                  </button>
+                </div>
+                <p class="text-muted" style="font-size:11px;margin-top:6px;">
+                  💡 To test locally: open this link in another browser tab or run
+                  <span class="mono text-accent">npm run start:4201</span> and paste it there.
+                </p>
+              } @else {
+                <p class="text-muted" style="font-size:12px;color:var(--text-muted);">Start a session first to get a share link.</p>
+              }
+            </div>
+          </div>
+
+          <div class="collab-divider"></div>
+
+          <!-- Step 3: Invite by username -->
+          <div class="collab-step">
+            <div class="collab-step-label">
+              <span class="step-num {{ isInSession() ? 'active' : 'inactive' }}">3</span>
+              <span class="fw600" style="font-size:13px;">Invite by Username</span>
+            </div>
+            <div style="padding:10px 0 0 28px;">
+              <p class="text-muted" style="font-size:12px;margin-bottom:10px;">
+                Search for a user and send them a notification invite. They'll see a banner with an Accept button.
+                @if (!isInSession()) {
+                  <span class="text-orange"> (Start a session first)</span>
+                }
+              </p>
+
+              <!-- Search input -->
+              <div class="invite-search-row">
+                <div style="position:relative;flex:1;">
+                  <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  <input class="input" style="padding-left:32px;"
+                    [(ngModel)]="inviteUsername"
+                    placeholder="Type username to search..."
+                    (input)="searchUsers()">
+                </div>
+              </div>
+
+              <!-- Search results -->
+              @if (userSearchResults.length > 0) {
+                <div class="user-results-list">
+                  @for (user of userSearchResults; track user.userId) {
+                    <div class="user-result-row">
+                      <div class="avatar avatar-md">{{ getInitials(user.fullName || user.username) }}</div>
+                      <div style="flex:1;">
+                        <div class="fw600" style="font-size:13px;">{{ user.fullName || user.username }}</div>
+                        <div class="mono text-muted" style="font-size:11px;">&#64;{{ user.username }}</div>
+                      </div>
+                      <button class="btn btn-primary btn-sm" (click)="inviteUser(user)">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        Send Invite
+                      </button>
+                    </div>
+                  }
+                </div>
+              }
+
+              @if (inviteUsername && userSearchResults.length === 0) {
+                <p class="text-muted" style="font-size:12px;padding:8px 0;">No users found matching "{{ inviteUsername }}"</p>
+              }
+
+              <!-- Success message -->
+              @if (inviteSent()) {
+                <div class="invite-success-msg">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  Invite sent to <strong>&#64;{{ inviteSentTo() }}</strong>! They'll see a green banner notification.
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="collab-divider"></div>
+
+          <!-- Current participants -->
+          @if (participants.length > 0) {
+            <div class="collab-step">
+              <div class="collab-step-label">
+                <span class="step-num done">👥</span>
+                <span class="fw600" style="font-size:13px;">Current Participants ({{ participants.length }})</span>
+              </div>
+              <div style="padding:10px 0 0 28px;">
+                @for (p of participants; track p.participantId) {
+                  <div class="participant-mini-row">
+                    <div class="avatar avatar-sm" [style.border-color]="p.color" [style.color]="p.color">{{ getInitials(p.username) }}</div>
+                    <span class="fw600" style="font-size:13px;">{{ p.username }}</span>
+                    <span class="badge {{ p.role === 'HOST' ? 'badge-accent' : 'badge-green' }}" style="font-size:10px;">{{ p.role }}</span>
+                    <span class="text-muted mono" style="font-size:10px;margin-left:auto;">L{{ p.cursorLine }}</span>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" (click)="showCollabModal.set(false)">Close</button>
+          @if (isInSession()) {
+            <button class="btn btn-danger btn-sm" (click)="leaveSession(); showCollabModal.set(false)">Leave Session</button>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showRenameModal()) {
+    <div class="modal-backdrop" (click)="showRenameModal.set(false)">
+      <div class="modal fade-in" (click)="$event.stopPropagation()" style="max-width:380px;">
+        <div class="modal-header">
+          <h3>Rename File</h3>
+          <button class="btn btn-icon" (click)="showRenameModal.set(false)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>New name</label>
+            <input class="input" type="text" [(ngModel)]="renameValue" (keyup.enter)="confirmRename()" autofocus>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" (click)="showRenameModal.set(false)">Cancel</button>
+          <button class="btn btn-primary" (click)="confirmRename()">Rename</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (showDeleteFileConfirm()) {
+    <div class="modal-backdrop" (click)="showDeleteFileConfirm.set(false)">
+      <div class="modal fade-in" (click)="$event.stopPropagation()" style="max-width:380px;">
+        <div class="modal-header">
+          <h3>Delete File</h3>
+          <button class="btn btn-icon" (click)="showDeleteFileConfirm.set(false)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p style="color:var(--text-secondary);font-size:14px;">
+            Are you sure you want to delete <strong style="color:var(--text-primary);">{{ fileToAction()?.name }}</strong>?
+            This cannot be undone.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" (click)="showDeleteFileConfirm.set(false)">Cancel</button>
+          <button class="btn btn-primary" style="background:#ff4d4d;border-color:#ff4d4d;" (click)="confirmDeleteFile()">Delete</button>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

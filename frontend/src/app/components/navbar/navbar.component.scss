@@ -1,0 +1,320 @@
+.navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 60px;
+  background: rgba(13, 17, 23, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  z-index: 1000;
+  box-shadow: 0 1px 20px rgba(0,0,0,0.4);
+}
+
+.nav-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 20px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+/* Logo */
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
+.logo-icon {
+  width: 32px; height: 32px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-glow);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+}
+
+.logo-text {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--text-primary);
+  letter-spacing: -0.03em;
+  span { color: var(--accent); }
+}
+
+/* Nav links */
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all var(--transition);
+
+  &:hover { color: var(--text-primary); background: var(--bg-elevated); }
+  &.active { color: var(--text-primary); background: var(--bg-elevated); }
+
+  &-glow.active {
+    color: var(--accent);
+    background: var(--accent-dim);
+    svg { stroke: var(--accent); }
+  }
+
+  &-admin {
+    color: #a78bfa;
+    &:hover { color: #c4b5fd; background: var(--purple-dim); }
+    &.active { color: #a78bfa; background: var(--purple-dim); }
+  }
+}
+
+/* Actions */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  position: relative;
+}
+
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: var(--green-dim);
+  border: 1px solid rgba(0,255,163,0.2);
+  border-radius: 20px;
+  font-size: 11px;
+  color: var(--green);
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+/* Notif trigger */
+.notif-trigger {
+  position: relative;
+}
+
+.notif-badge {
+  position: absolute;
+  top: -3px; right: -3px;
+  min-width: 16px; height: 16px;
+  background: var(--red);
+  color: white;
+  border-radius: 10px;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  pointer-events: none;
+}
+
+/* Notifications panel */
+.notif-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 60px;
+  width: 360px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glow);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,212,255,0.05);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.notif-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background var(--transition);
+  border-bottom: 1px solid rgba(37,48,69,0.5);
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: var(--bg-elevated); }
+
+  &.unread {
+    background: rgba(0, 212, 255, 0.03);
+    .notif-title { color: var(--text-primary); }
+  }
+}
+
+.notif-icon {
+  width: 32px; height: 32px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.notif-body { flex: 1; min-width: 0; }
+.notif-title { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 2px; }
+.notif-msg { font-size: 11px; color: var(--text-muted); line-height: 1.4; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notif-time { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); }
+
+.notif-footer {
+  display: block;
+  padding: 12px 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--accent);
+  border-top: 1px solid var(--border);
+  transition: background var(--transition);
+  &:hover { background: var(--bg-elevated); }
+}
+
+/* User menu */
+.user-trigger { cursor: pointer; }
+
+.user-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glow);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  z-index: 100;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.user-menu-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 8px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  transition: all var(--transition);
+  font-family: var(--font-sans);
+
+  &:hover { color: var(--text-primary); background: var(--bg-elevated); }
+
+  &-admin {
+    color: #a78bfa;
+    &:hover { color: #c4b5fd; background: var(--purple-dim); }
+  }
+
+  &-danger {
+    color: var(--red);
+    &:hover { background: var(--red-dim); }
+  }
+}
+
+/* Active state for btn-icon */
+.btn-icon.active {
+  color: var(--accent);
+  border-color: var(--accent-mid);
+  background: var(--accent-dim);
+}
+
+/* Hamburger (mobile only) */
+.hamburger { display: none; }
+
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .live-badge { display: none; }
+  .hamburger { display: flex; }
+
+  .nav-links.mobile-open {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 60px;
+    left: 0; right: 0;
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px;
+    gap: 4px;
+    z-index: 999;
+  }
+}
+
+/* Global invite banner — shown above navbar on every page */
+.global-invite-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 20px;
+  background: linear-gradient(90deg, rgba(0,255,163,0.1), rgba(0,212,255,0.08));
+  border-bottom: 1px solid rgba(0,255,163,0.35);
+  flex-wrap: wrap;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1100;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+.global-invite-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  min-width: 160px;
+}
+
+/* Push navbar down when invite banner is shown */
+/* (handled by Angular — banner sits above navbar in DOM) */
